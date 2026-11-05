@@ -3,6 +3,7 @@ import { cssVars } from '../lib/css';
 import { STATUSES, type Status } from '../types';
 import { Kbd } from './Badges';
 import { Icon } from './Icon';
+import { Logo } from './Logo';
 
 interface Props {
   total: number;
@@ -67,19 +68,8 @@ export function Sidebar({ total, counts, active, onSelect, onOpenPalette }: Prop
   return (
     <aside className="sidebar">
       <div className="brand">
-        <span className="brand__mark" aria-hidden="true">
-          Z
-        </span>
-        <span className="brand__name">ZAUM</span>
+        <Logo className="brand__logo" height={13} />
         <span className="brand__section">Блогеры</span>
-        <button
-          type="button"
-          className="icon-btn sidebar__palette"
-          onClick={onOpenPalette}
-          aria-label="Поиск и команды"
-        >
-          <Icon name="search" />
-        </button>
       </div>
 
       <button type="button" className="finder" onClick={onOpenPalette}>
