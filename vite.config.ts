@@ -62,10 +62,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.{ts,tsx}'],
+      include: ['src/**/*.{ts,tsx}', 'scripts/build-data.lib.mjs'],
       exclude: [
         'src/**/*.test.{ts,tsx}',
         'src/test/**',
@@ -74,6 +74,8 @@ export default defineConfig({
         'src/data/bloggers.json',
       ],
       reporter: ['text-summary', 'text'],
+      // Планка качества: код без тестов в сборку не попадает.
+      thresholds: { statements: 100, branches: 100, functions: 100, lines: 100 },
     },
   },
 });

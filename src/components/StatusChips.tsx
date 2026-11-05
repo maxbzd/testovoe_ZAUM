@@ -22,9 +22,9 @@ export function StatusChips({ total, counts, active, onSelect }: Props) {
 
   // Выбранный чип всегда оказывается в поле зрения.
   useEffect(() => {
-    const container = rail.current;
-    const chip = container?.querySelector<HTMLElement>('[aria-pressed="true"]');
-    if (!container || !chip) return;
+    const container = rail.current as HTMLDivElement;
+    // Выбран всегда ровно один чип: «Все» или статус.
+    const chip = container.querySelector('[aria-pressed="true"]') as HTMLElement;
     container.scrollTo({
       left: chip.offsetLeft - (container.clientWidth - chip.offsetWidth) / 2,
       behavior: prefersReducedMotion() ? 'auto' : 'smooth',

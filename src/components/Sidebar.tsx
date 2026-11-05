@@ -30,11 +30,10 @@ export function Sidebar({ total, counts, active, onSelect, onOpenPalette }: Prop
   const activeKey = active ?? 'all';
 
   useLayoutEffect(() => {
-    const nav = navRef.current;
-    if (!nav) return undefined;
+    const nav = navRef.current as HTMLElement; // layout-эффект: элемент уже в DOM
     const measure = (): void => {
-      const target = nav.querySelector<HTMLElement>('[aria-current="true"]');
-      if (!target) return;
+      // Активный пункт есть всегда: «Все» или один из статусов.
+      const target = nav.querySelector('[aria-current="true"]') as HTMLElement;
       setMarker({
         x: target.offsetLeft,
         y: target.offsetTop,

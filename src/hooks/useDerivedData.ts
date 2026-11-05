@@ -15,7 +15,9 @@ export function useDataScale(placements: readonly Placement[]) {
       cpmMax: cpms.length ? Math.max(...cpms) : 0,
       maxReach: Math.max(0, ...placements.map((item) => item.storyReach)),
       maxReels: Math.max(0, ...placements.map((item) => item.reelsViews)),
-      range: dates.length ? formatDateRange(dates[0] ?? '', dates[dates.length - 1] ?? '') : '',
+      range: dates.length
+        ? formatDateRange(dates[0] as string, dates[dates.length - 1] as string)
+        : '',
       platforms: new Set(placements.map((item) => item.platform)).size,
     };
   }, [placements]);

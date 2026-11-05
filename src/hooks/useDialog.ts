@@ -19,7 +19,8 @@ export function useDialog(root: RefObject<HTMLElement | null>, options: Options)
   // Синхронный эффект: фокус возвращается в том же кадре, что и закрытие, без «провала» на body.
   useLayoutEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const first = root.current?.querySelector<HTMLElement>(FOCUSABLE);
+    // Эффект выполняется после монтирования: корневой элемент уже существует.
+    const first = (root.current as HTMLElement).querySelector<HTMLElement>(FOCUSABLE);
     (initialFocus?.current ?? first)?.focus({ preventScroll: true });
     return () => {
       if (opener?.isConnected) opener.focus({ preventScroll: true });
@@ -36,8 +37,9 @@ export function useDialog(root: RefObject<HTMLElement | null>, options: Options)
         return;
       }
       if (event.key !== 'Tab') return;
-      const nodes = root.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
-      if (!nodes || nodes.length === 0) return;
+      // Слушатель снимается при размонтировании, поэтому корень здесь всегда есть.
+      const nodes = (root.current as HTMLElement).querySelectorAll<HTMLElement>(FOCUSABLE);
+      if (nodes.length === 0) return;
       const first = nodes[0];
       const last = nodes[nodes.length - 1];
       if (event.shiftKey && document.activeElement === first) {
