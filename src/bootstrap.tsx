@@ -1,5 +1,5 @@
 import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, type Root } from 'react-dom/client';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { parsePlacements } from './data/load';
@@ -8,7 +8,7 @@ import { parsePlacements } from './data/load';
  * Запускает приложение. Данные проверяются до первого рендера: если таблица
  * сломана, человек увидит понятное сообщение, а не пустую страницу.
  */
-export function mount(container: HTMLElement, rawData: unknown): void {
+export function mount(container: HTMLElement, rawData: unknown): Root {
   const root = createRoot(container);
   try {
     const placements = parsePlacements(rawData);
@@ -27,4 +27,5 @@ export function mount(container: HTMLElement, rawData: unknown): void {
       </main>,
     );
   }
+  return root;
 }
