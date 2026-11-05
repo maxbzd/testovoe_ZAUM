@@ -224,7 +224,7 @@ describe('useSheetDrag (крайние случаи)', () => {
 function Modal({ initialFocusMissing = false }: { initialFocusMissing?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const missing = useRef<HTMLButtonElement>(null);
-  useDialog(ref, { onClose: vi.fn(), initialFocus: initialFocusMissing ? missing : undefined });
+  useDialog(ref, { onClose: vi.fn(), ...(initialFocusMissing ? { initialFocus: missing } : {}) });
   return (
     <div ref={ref} role="dialog" aria-label="окно">
       <button>единственная</button>

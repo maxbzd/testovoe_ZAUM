@@ -13,7 +13,7 @@ const rowNames = (): string[] =>
 beforeEach(() => {
   window.history.replaceState(null, '', '/');
   window.localStorage.clear();
-  delete document.documentElement.dataset.theme;
+  document.documentElement.removeAttribute('data-theme');
 });
 
 describe('App', () => {
@@ -141,7 +141,7 @@ describe('App', () => {
     const user = userEvent.setup();
     render(<App placements={sample} />);
     await user.click(screen.getByRole('button', { name: /^Тема: системная/ }));
-    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('light');
     expect(window.localStorage.getItem('bloggers:theme')).toBe('light');
   });
 

@@ -1,0 +1,154 @@
+/* Боковая панель и «виды» (десктоп) */
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  height: 100dvh;
+  padding: 14px 12px;
+  border-right: 1px solid var(--line);
+  background: var(--bg-side);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 6px;
+}
+
+.brand__logo {
+  flex: none;
+  color: var(--text);
+}
+
+.brand__section {
+  color: var(--muted);
+}
+
+.brand__section::before {
+  content: '/';
+  margin-right: 8px;
+  color: var(--line-strong);
+}
+
+.finder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--muted);
+  text-align: left;
+  transition: background-color 0.12s;
+}
+
+.finder:hover {
+  background: var(--surface-2);
+}
+
+.finder__label {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.views {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.views__title {
+  padding: 8px 10px 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.views__marker {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--w);
+  height: var(--h);
+  border-radius: var(--r-md);
+  background: var(--surface-3);
+  transform: translate(var(--x), var(--y));
+  transition:
+    transform 0.3s var(--ease-out),
+    width 0.3s var(--ease-out),
+    height 0.3s var(--ease-out);
+  animation: fade 0.3s both;
+}
+
+.views__item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--text-2);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+  transition: background-color 0.12s;
+}
+
+.views__item:hover:not([aria-current='true']) {
+  background: var(--surface-2);
+}
+
+.views__item[aria-current='true'] {
+  color: var(--text);
+}
+
+.views__dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin: 0 3.5px;
+  border-radius: 50%;
+  background: var(--dot);
+}
+
+.views__icon {
+  flex: none;
+  color: var(--muted);
+}
+
+.views__label {
+  flex: 1;
+}
+
+.views__count {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sidebar__hint {
+  margin-top: auto;
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 2;
+}
+
+.sidebar__hint .kbd {
+  margin-right: 2px;
+}
+
+@media (max-width: 379px) {
+  .brand__section {
+    display: none;
+  }
+}

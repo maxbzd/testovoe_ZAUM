@@ -5,7 +5,7 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 import { defineConfig, type Plugin } from 'vitest/config';
 
 /** `npm run build:single` собирает один HTML-файл (для превью без хостинга). */
-const single = process.env.SINGLEFILE === '1';
+const single = process.env['SINGLEFILE'] === '1';
 
 /**
  * Строгая политика безопасности: только свои скрипты, стили и шрифты, никаких
