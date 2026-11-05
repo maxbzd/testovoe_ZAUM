@@ -11,9 +11,11 @@ interface Props {
   scale: { cpmMin: number; cpmMax: number; maxReach: number };
   statusCounts: Record<Status, number>;
   filtered: boolean;
+  /** Лента прокручивается (телефон): нужен доступ с клавиатуры. */
+  scrollable: boolean;
 }
 
-export function StatsBar({ metrics, rows, scale, statusCounts, filtered }: Props) {
+export function StatsBar({ metrics, rows, scale, statusCounts, filtered, scrollable }: Props) {
   const paid = PLATFORMS.map((platform) => ({
     platform,
     value: metrics.paidByPlatform[platform],
@@ -25,6 +27,7 @@ export function StatsBar({ metrics, rows, scale, statusCounts, filtered }: Props
   return (
     <section
       className="stats"
+      tabIndex={scrollable ? 0 : undefined}
       aria-label={filtered ? 'Показатели по текущему отбору' : 'Показатели'}
     >
       <div className="stat">
@@ -49,7 +52,7 @@ export function StatsBar({ metrics, rows, scale, statusCounts, filtered }: Props
         <span className="stat__value">
           <AnimatedNumber value={metrics.barterValue} format={formatRub} />
         </span>
-        <span className="stat__sub stat__sub--push">
+        <span className="stat__sub stat__sub--keep">
           {metrics.barterCount > 0
             ? `${metrics.barterCount} размещений, без оплаты`
             : 'Бартера нет'}

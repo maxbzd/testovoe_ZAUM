@@ -1,116 +1,63 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import { CommandPalette, type PaletteAction } from './components/CommandPalette';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CommandPalette } from './components/CommandPalette';
 import { Drawer } from './components/Drawer';
 import { EmptyState } from './components/EmptyState';
+import { FilterSheet } from './components/FilterSheet';
 import { Icon } from './components/Icon';
+import { MobileBar } from './components/MobileBar';
 import { PlacementList } from './components/PlacementList';
 import { PlacementTable } from './components/PlacementTable';
+import { SearchField } from './components/SearchField';
 import { Sidebar } from './components/Sidebar';
 import { StatsBar } from './components/StatsBar';
+import { StatusChips } from './components/StatusChips';
 import { ThemeButton } from './components/ThemeButton';
-import { Toast, type ToastMessage } from './components/Toast';
-import { SORT_LABELS, Toolbar } from './components/Toolbar';
-import { useMediaQuery } from './hooks/useMediaQuery';
+import { Toast } from './components/Toast';
+import { Toolbar } from './components/Toolbar';
+import { Topbar } from './components/Topbar';
 import { useMode } from './hooks/useAppearance';
-import { MODES } from './lib/appearance';
+import { useDataScale, useDerivedData } from './hooks/useDerivedData';
+import { useHotkeys } from './hooks/useHotkeys';
+import { useMediaQuery } from './hooks/useMediaQuery';
+import { useToast } from './hooks/useToast';
+import { useUrlState } from './hooks/useUrlState';
 import { copyText } from './lib/clipboard';
 import { downloadCsv } from './lib/csv';
-import { applyFilters, EMPTY_FILTERS, hasActiveFilters, sortItems } from './lib/filter';
-import { formatDateRange, plural } from './lib/format';
-import { computeMetrics, cpmOf } from './lib/metrics';
+import { EMPTY_FILTERS, hasActiveFilters } from './lib/filter';
+import { plural } from './lib/format';
+import { buildPaletteActions } from './lib/palette-actions';
+import { DEFAULT_DIR, isDefaultSort, SORT_LABELS } from './lib/sort';
 import { prefersReducedMotion, withTransition } from './lib/transition';
-import { parseState, serializeState, type AppState } from './lib/url-state';
-import {
-  PLATFORMS,
-  STATUSES,
-  type Placement,
-  type Platform,
-  type SortDir,
-  type SortKey,
-  type Status,
-} from './types';
+import type { AppState } from './lib/url-state';
+import type { Placement, Platform, Sort, SortKey, Status } from './types';
 
 interface Props {
   placements: readonly Placement[];
 }
 
-const DEFAULT_DIR: Record<SortKey, SortDir> = {
-  name: 'asc',
-  platform: 'asc',
-  status: 'asc',
-  date: 'asc',
-  subscribers: 'desc',
-  storyReach: 'desc',
-  reelsViews: 'desc',
-  cost: 'desc',
-  cpm: 'desc',
-};
+const DRAWER_EXIT_MS = 240;
+/** Ниже этой ширины таблица тесна: переходим на телефонную раскладку. */
+const COMPACT_QUERY = '(max-width: 899px)';
 
-const EXIT_MS = 240;
+const csvFilename = (): string => `bloggers-${new Date().toISOString().slice(0, 10)}.csv`;
 
-const isTyping = (target: EventTarget | null): boolean =>
-  target instanceof HTMLElement &&
-  (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
+const WORDS = ['размещение', 'размещения', 'размещений'] as const;
 
 export default function App({ placements }: Props) {
-  const [state, setState] = useState<AppState>(() => parseState(window.location.search));
+  const [state, setState] = useUrlState();
   const [mode, setMode] = useMode();
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [toast, showToast] = useToast();
   const [exiting, setExiting] = useState<Placement | null>(null);
   const [intro, setIntro] = useState(true);
-  const compact = useMediaQuery('(max-width: 759px)');
+  const compact = useMediaQuery(COMPACT_QUERY);
   const searchRef = useRef<HTMLInputElement>(null);
   const timers = useRef<number[]>([]);
 
-  // Постоянные для набора данных: шкалы, чтобы полоски не «прыгали» при фильтрах.
-  const scale = useMemo(() => {
-    const cpms = placements.map(cpmOf).filter((value) => value > 0);
-    const dates = placements.map((item) => item.date).sort();
-    return {
-      cpmMin: cpms.length ? Math.min(...cpms) : 0,
-      cpmMax: cpms.length ? Math.max(...cpms) : 0,
-      maxReach: Math.max(0, ...placements.map((item) => item.storyReach)),
-      maxReels: Math.max(0, ...placements.map((item) => item.reelsViews)),
-      range: dates.length ? formatDateRange(dates[0] ?? '', dates[dates.length - 1] ?? '') : '',
-      platforms: new Set(placements.map((item) => item.platform)).size,
-    };
-  }, [placements]);
-
-  const deferredQuery = useDeferredValue(state.filters.query);
-  const filters = useMemo(
-    () => ({ ...state.filters, query: deferredQuery }),
-    [state.filters, deferredQuery],
-  );
-
-  const rows = useMemo(
-    () => sortItems(applyFilters(placements, filters), state.sort),
-    [placements, filters, state.sort],
-  );
-  const metrics = useMemo(() => computeMetrics(rows), [rows]);
-
-  // Счётчики «а что будет, если выбрать это»: каждый учитывает остальные фильтры.
-  const statusCounts = useMemo(() => {
-    const counts = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<Status, number>;
-    for (const item of applyFilters(placements, filters, 'status')) counts[item.status] += 1;
-    return counts;
-  }, [placements, filters]);
-  const statusTotal = useMemo(
-    () => STATUSES.reduce((sum, status) => sum + statusCounts[status], 0),
-    [statusCounts],
-  );
-  const rowStatusCounts = useMemo(() => {
-    const counts = Object.fromEntries(STATUSES.map((s) => [s, 0])) as Record<Status, number>;
-    for (const item of rows) counts[item.status] += 1;
-    return counts;
-  }, [rows]);
-  const platformCounts = useMemo(() => {
-    const counts = Object.fromEntries(PLATFORMS.map((p) => [p, 0])) as Record<Platform, number>;
-    for (const item of applyFilters(placements, { ...filters, platforms: [] })) {
-      counts[item.platform] += 1;
-    }
-    return counts;
-  }, [placements, filters]);
+  const scale = useDataScale(placements);
+  const { rows, metrics, statusCounts, statusTotal, rowStatusCounts, platformCounts } =
+    useDerivedData(placements, state);
 
   const current = useMemo(
     () => (state.openId === null ? null : (placements.find((p) => p.id === state.openId) ?? null)),
@@ -123,16 +70,14 @@ export default function App({ placements }: Props) {
   }, [rows, state.openId]);
 
   const filtersActive = hasActiveFilters(state.filters);
-  const overlayOpen = paletteOpen || drawerItem !== null;
+  const sheetOpen = filtersOpen && compact;
+  const overlayOpen = paletteOpen || sheetOpen || drawerItem !== null;
 
   // ——— действия ———
-  const commit = useCallback((next: (previous: AppState) => AppState) => {
-    withTransition(() => setState(next));
-  }, []);
-
-  const showToast = useCallback((text: string) => {
-    setToast({ id: Date.now(), text });
-  }, []);
+  const commit = useCallback(
+    (next: (previous: AppState) => AppState) => withTransition(() => setState(next)),
+    [setState],
+  );
 
   const selectStatus = useCallback(
     (status: Status | null) => commit((s) => ({ ...s, filters: { ...s.filters, status } })),
@@ -155,12 +100,13 @@ export default function App({ placements }: Props) {
   );
   const setQuery = useCallback(
     (query: string) => setState((s) => ({ ...s, filters: { ...s.filters, query } })),
-    [],
+    [setState],
   );
   const resetFilters = useCallback(
     () => commit((s) => ({ ...s, filters: EMPTY_FILTERS })),
     [commit],
   );
+  const setSort = useCallback((sort: Sort) => commit((s) => ({ ...s, sort })), [commit]);
   const sortBy = useCallback(
     (key: SortKey) =>
       commit((s) => ({
@@ -172,33 +118,27 @@ export default function App({ placements }: Props) {
       })),
     [commit],
   );
-  const toggleDir = useCallback(
-    () =>
-      commit((s) => ({ ...s, sort: { ...s.sort, dir: s.sort.dir === 'asc' ? 'desc' : 'asc' } })),
-    [commit],
+
+  const openPlacement = useCallback(
+    (id: number) => setState((s) => ({ ...s, openId: id })),
+    [setState],
   );
-
-  const openPlacement = useCallback((id: number) => {
-    setState((s) => ({ ...s, openId: id }));
-  }, []);
-
   const closeDrawer = useCallback(() => {
     if (current) {
       setExiting(current);
       timers.current.push(
-        window.setTimeout(() => setExiting(null), prefersReducedMotion() ? 0 : EXIT_MS),
+        window.setTimeout(() => setExiting(null), prefersReducedMotion() ? 0 : DRAWER_EXIT_MS),
       );
     }
     setState((s) => ({ ...s, openId: null }));
-  }, [current]);
-
+  }, [current, setState]);
   const step = useCallback(
     (delta: 1 | -1) => {
       if (!position || rows.length === 0) return;
       const next = rows[(position.index + delta + rows.length) % rows.length];
       if (next) setState((s) => ({ ...s, openId: next.id }));
     },
-    [position, rows],
+    [position, rows, setState],
   );
 
   const copyArticle = useCallback(
@@ -216,75 +156,37 @@ export default function App({ placements }: Props) {
       showToast('В превью скачивание отключено, на сайте файл сохранится');
       return;
     }
-    const ok = downloadCsv(rows, 'bloggers.csv');
+    const ok = downloadCsv(rows, csvFilename());
     showToast(
-      ok
-        ? `Выгружено: ${rows.length} ${plural(rows.length, ['размещение', 'размещения', 'размещений'])}`
-        : 'Не удалось создать файл',
+      ok ? `Выгружено: ${rows.length} ${plural(rows.length, WORDS)}` : 'Не удалось создать файл',
     );
   }, [rows, showToast]);
 
-  const palette = useMemo<PaletteAction[]>(() => {
-    const list: PaletteAction[] = [
-      {
-        id: 'view-all',
-        label: 'Показать все размещения',
-        icon: 'table',
-        keywords: 'все статус вид',
-        run: () => selectStatus(null),
-      },
-      ...STATUSES.map<PaletteAction>((status) => ({
-        id: `view-${status}`,
-        label: `Показать: ${status}`,
-        hint: `${statusCounts[status]}`,
-        icon: 'table',
-        keywords: 'статус вид воронка',
-        run: () => selectStatus(status),
-      })),
-      ...PLATFORMS.map<PaletteAction>((platform) => ({
-        id: `platform-${platform}`,
-        label: `${state.filters.platforms.includes(platform) ? 'Убрать' : 'Добавить'} фильтр: ${platform}`,
-        icon: 'filter',
-        keywords: 'площадка фильтр',
-        run: () => togglePlatform(platform),
-      })),
-      {
-        id: 'export',
-        label: 'Экспорт в CSV',
-        hint: `${rows.length}`,
-        icon: 'download',
-        keywords: 'скачать выгрузка excel',
-        run: exportCsv,
-      },
-      ...MODES.map<PaletteAction>((m) => ({
-        id: `theme-${m}`,
-        label: `Тема: ${m === 'system' ? 'системная' : m === 'light' ? 'светлая' : 'тёмная'}`,
-        icon: m === 'system' ? 'monitor' : m === 'light' ? 'sun' : 'moon',
-        keywords: 'оформление цвет',
-        run: () => setMode(m),
-      })),
-    ];
-    if (filtersActive) {
-      list.unshift({
-        id: 'reset',
-        label: 'Сбросить фильтры',
-        icon: 'x',
-        keywords: 'очистить убрать',
-        run: resetFilters,
-      });
-    }
-    return list;
-  }, [
-    statusCounts,
-    state.filters.platforms,
-    rows.length,
-    filtersActive,
-    selectStatus,
-    togglePlatform,
-    exportCsv,
-    setMode,
-    resetFilters,
-  ]);
+  const paletteActions = useMemo(
+    () =>
+      buildPaletteActions({
+        statusCounts,
+        selectedPlatforms: state.filters.platforms,
+        rowCount: rows.length,
+        filtersActive,
+        selectStatus,
+        togglePlatform,
+        resetFilters,
+        exportCsv,
+        setMode,
+      }),
+    [
+      statusCounts,
+      state.filters.platforms,
+      rows.length,
+      filtersActive,
+      selectStatus,
+      togglePlatform,
+      resetFilters,
+      exportCsv,
+      setMode,
+    ],
+  );
 
   // ——— побочные эффекты ———
   useEffect(() => {
@@ -297,72 +199,74 @@ export default function App({ placements }: Props) {
   }, []);
 
   useEffect(() => {
-    try {
-      const next = serializeState(state);
-      if (next !== window.location.search) {
-        window.history.replaceState(
-          null,
-          '',
-          `${window.location.pathname}${next}${window.location.hash}`,
-        );
-      }
-    } catch {
-      /* адресная строка недоступна (iframe, file://) — состояние просто не сохранится в ссылке */
-    }
-  }, [state]);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent): void => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setPaletteOpen((open) => !open);
-        return;
-      }
-      if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey) {
-        if (paletteOpen || drawerItem || isTyping(event.target)) return;
-        event.preventDefault();
-        searchRef.current?.focus();
-      }
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [paletteOpen, drawerItem]);
-
-  useEffect(() => {
     document.documentElement.classList.toggle('is-locked', overlayOpen);
   }, [overlayOpen]);
+
+  useHotkeys({
+    searchRef,
+    onTogglePalette: useCallback(() => setPaletteOpen((open) => !open), []),
+    blocked: paletteOpen || sheetOpen || drawerItem !== null,
+  });
+
+  const subtitle = [
+    `${placements.length} ${plural(placements.length, WORDS)}`,
+    `${scale.platforms} ${plural(scale.platforms, ['площадка', 'площадки', 'площадок'])}`,
+    scale.range,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const activeFilterCount = state.filters.platforms.length + (isDefaultSort(state.sort) ? 0 : 1);
+
+  const results =
+    rows.length === 0 ? (
+      <EmptyState onReset={resetFilters} />
+    ) : compact ? (
+      <PlacementList rows={rows} activeId={state.openId} onOpen={openPlacement} />
+    ) : (
+      <PlacementTable
+        rows={rows}
+        sort={state.sort}
+        onSort={sortBy}
+        activeId={state.openId}
+        onOpen={openPlacement}
+        maxReach={scale.maxReach}
+        maxReels={scale.maxReels}
+      />
+    );
 
   return (
     <>
       <div className={intro ? 'app is-intro' : 'app'} inert={overlayOpen}>
-        <Sidebar
-          total={statusTotal}
-          counts={statusCounts}
-          active={state.filters.status}
-          onSelect={selectStatus}
-          onOpenPalette={() => setPaletteOpen(true)}
-        />
+        {compact ? (
+          <MobileBar
+            mode={mode}
+            onMode={setMode}
+            onOpenPalette={() => setPaletteOpen(true)}
+            onExport={exportCsv}
+          />
+        ) : (
+          <Sidebar
+            total={statusTotal}
+            counts={statusCounts}
+            active={state.filters.status}
+            onSelect={selectStatus}
+            onOpenPalette={() => setPaletteOpen(true)}
+          />
+        )}
 
         <main className="main">
-          <header className="topbar">
-            <div>
-              <h1 className="topbar__title">Размещения</h1>
-              <p className="topbar__sub">
-                {placements.length}{' '}
-                {plural(placements.length, ['размещение', 'размещения', 'размещений'])} ·{' '}
-                {scale.platforms} {plural(scale.platforms, ['площадка', 'площадки', 'площадок'])}
-                {scale.range && ` · ${scale.range}`}
-              </p>
-            </div>
-            <div className="topbar__actions">
-              <span className="badge">Демо-данные</span>
-              <ThemeButton mode={mode} onChange={setMode} />
-              <button type="button" className="btn" onClick={exportCsv}>
-                <Icon name="download" size={15} />
-                <span className="btn__text">Экспорт CSV</span>
-              </button>
-            </div>
-          </header>
+          <Topbar title="Размещения" subtitle={subtitle}>
+            {!compact && (
+              <>
+                <span className="badge">Демо-данные</span>
+                <ThemeButton mode={mode} onChange={setMode} />
+                <button type="button" className="btn" onClick={exportCsv}>
+                  <Icon name="download" size={15} />
+                  Экспорт CSV
+                </button>
+              </>
+            )}
+          </Topbar>
 
           <StatsBar
             metrics={metrics}
@@ -370,42 +274,72 @@ export default function App({ placements }: Props) {
             scale={scale}
             statusCounts={rowStatusCounts}
             filtered={filtersActive}
+            scrollable={compact}
           />
 
-          <Toolbar
-            query={state.filters.query}
-            onQuery={setQuery}
-            searchRef={searchRef}
-            platforms={state.filters.platforms}
-            platformCounts={platformCounts}
-            onTogglePlatform={togglePlatform}
-            onClearPlatforms={clearPlatforms}
-            sort={state.sort}
-            onSort={sortBy}
-            onToggleDir={toggleDir}
-            showSort={compact}
-            shown={rows.length}
-            total={placements.length}
-            hasFilters={filtersActive}
-            onReset={resetFilters}
-          />
-
-          {rows.length === 0 ? (
-            <EmptyState onReset={resetFilters} />
-          ) : compact ? (
-            <PlacementList rows={rows} activeId={state.openId} onOpen={openPlacement} />
+          {compact ? (
+            <>
+              <div className="mtools">
+                <div className="mtools__row">
+                  <SearchField
+                    value={state.filters.query}
+                    onChange={setQuery}
+                    inputRef={searchRef}
+                  />
+                  <button
+                    type="button"
+                    className="filter-btn"
+                    onClick={() => setFiltersOpen(true)}
+                    aria-label={
+                      activeFilterCount > 0
+                        ? `Фильтры и сортировка, изменено: ${activeFilterCount}`
+                        : 'Фильтры и сортировка'
+                    }
+                  >
+                    <Icon name="sliders" size={18} />
+                    {activeFilterCount > 0 && (
+                      <span className="filter-btn__badge" aria-hidden="true">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
+                <StatusChips
+                  total={statusTotal}
+                  counts={statusCounts}
+                  active={state.filters.status}
+                  onSelect={selectStatus}
+                />
+              </div>
+              <p className="summary" role="status" aria-live="polite">
+                <span>
+                  {rows.length} из {placements.length} · {SORT_LABELS[state.sort.key]}{' '}
+                  {state.sort.dir === 'asc' ? '↑' : '↓'}
+                </span>
+                {filtersActive && (
+                  <button type="button" className="link-btn" onClick={resetFilters}>
+                    Сбросить
+                  </button>
+                )}
+              </p>
+            </>
           ) : (
-            <PlacementTable
-              rows={rows}
-              sort={state.sort}
-              onSort={sortBy}
-              activeId={state.openId}
-              onOpen={openPlacement}
-              maxReach={scale.maxReach}
-              maxReels={scale.maxReels}
+            <Toolbar
+              query={state.filters.query}
+              onQuery={setQuery}
+              searchRef={searchRef}
+              platforms={state.filters.platforms}
+              platformCounts={platformCounts}
+              onTogglePlatform={togglePlatform}
+              onClearPlatforms={clearPlatforms}
+              shown={rows.length}
+              total={placements.length}
+              hasFilters={filtersActive}
+              onReset={resetFilters}
             />
           )}
-          <p className="sr-only">Сортировка: {SORT_LABELS[state.sort.key]}</p>
+
+          {results}
         </main>
       </div>
 
@@ -413,6 +347,7 @@ export default function App({ placements }: Props) {
         <Drawer
           item={drawerItem}
           closing={current === null}
+          suspended={paletteOpen || sheetOpen}
           position={position}
           onClose={closeDrawer}
           onStep={step}
@@ -420,14 +355,26 @@ export default function App({ placements }: Props) {
         />
       )}
 
-      {paletteOpen && (
-        <CommandPalette
-          placements={placements}
-          actions={palette}
-          onOpenPlacement={openPlacement}
-          onClose={() => setPaletteOpen(false)}
-        />
-      )}
+      <FilterSheet
+        open={sheetOpen}
+        platforms={state.filters.platforms}
+        platformCounts={platformCounts}
+        onTogglePlatform={togglePlatform}
+        sort={state.sort}
+        onSort={setSort}
+        shown={rows.length}
+        hasFilters={filtersActive}
+        onReset={resetFilters}
+        onClose={() => setFiltersOpen(false)}
+      />
+
+      <CommandPalette
+        open={paletteOpen}
+        placements={placements}
+        actions={paletteActions}
+        onOpenPlacement={openPlacement}
+        onClose={() => setPaletteOpen(false)}
+      />
 
       <Toast message={toast} />
     </>

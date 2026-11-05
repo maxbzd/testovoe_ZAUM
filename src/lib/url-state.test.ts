@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SORT, initialState, parseState, serializeState } from './url-state';
+import { DEFAULT_SORT } from './sort';
+import { initialState, parseState, serializeState } from './url-state';
 
 describe('url-state', () => {
   it('пустой адрес — состояние по умолчанию', () => {

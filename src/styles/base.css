@@ -6,6 +6,7 @@
 
 html {
   scrollbar-gutter: stable;
+  -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -42,6 +43,13 @@ input,
 select {
   font: inherit;
   color: inherit;
+}
+
+button,
+a,
+label,
+select {
+  touch-action: manipulation;
 }
 
 button {
