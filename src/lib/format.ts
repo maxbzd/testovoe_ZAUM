@@ -38,6 +38,9 @@ const WEEKDAYS = [
   'суббота',
 ] as const;
 
+/** Название из списка по номеру месяца 1–12 (номер уже проверен разбором даты). */
+const nameOf = (list: readonly string[], month: number): string => list[month - 1] as string;
+
 /** 23200 → «23 200» (неразрывные пробелы, чтобы число не рвалось на две строки). */
 export const formatInt = (value: number): string => intFormat.format(Math.round(value));
 
@@ -71,15 +74,17 @@ export function parseIsoDate(iso: string): DateParts | null {
 export function formatDateShort(iso: string): string {
   const parts = parseIsoDate(iso);
   if (!parts) return iso;
-  return `${parts.day} ${MONTHS_SHORT[parts.month - 1] ?? ''}`;
+  return `${parts.day} ${nameOf(MONTHS_SHORT, parts.month)}`;
 }
 
 /** «2026-11-12» → «12 ноября 2026, четверг». */
 export function formatDateLong(iso: string): string {
   const parts = parseIsoDate(iso);
   if (!parts) return iso;
-  const weekday = WEEKDAYS[new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()];
-  return `${parts.day} ${MONTHS_GENITIVE[parts.month - 1] ?? ''} ${parts.year}, ${weekday ?? ''}`;
+  const weekday = WEEKDAYS[
+    new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).getUTCDay()
+  ] as string;
+  return `${parts.day} ${nameOf(MONTHS_GENITIVE, parts.month)} ${parts.year}, ${weekday}`;
 }
 
 /** Русское склонение: plural(1, ['размещение','размещения','размещений']) → «размещение». */
@@ -98,7 +103,7 @@ export function formatDateRange(fromIso: string, toIso: string): string {
   const to = parseIsoDate(toIso);
   if (!from || !to) return '';
   if (from.year === to.year && from.month === to.month) {
-    const month = MONTHS_GENITIVE[to.month - 1] ?? '';
+    const month = nameOf(MONTHS_GENITIVE, to.month);
     return from.day === to.day
       ? `${to.day} ${month} ${to.year}`
       : `${from.day}–${to.day} ${month} ${to.year}`;
