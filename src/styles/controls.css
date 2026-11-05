@@ -1,0 +1,119 @@
+/* Кнопки, иконки-кнопки, клавиши, бейдж «демо» */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 0.12s,
+    transform 0.08s var(--ease-out),
+    opacity 0.12s;
+}
+
+.btn:hover {
+  background: var(--surface-2);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn--primary {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--on-ink);
+}
+
+.btn--primary:hover {
+  background: var(--text);
+  opacity: 0.86;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  background: transparent;
+  color: var(--muted);
+  text-decoration: none;
+  transition:
+    background-color 0.12s,
+    color 0.12s,
+    transform 0.08s var(--ease-out);
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.icon-btn--bordered {
+  width: 34px;
+  height: 34px;
+  border-color: var(--line-strong);
+  background: var(--surface);
+  color: var(--text-2);
+}
+
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.link-btn:hover {
+  color: var(--text);
+}
+
+.kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 2px 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 5px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font: 500 11px/1.2 var(--font);
+  text-align: center;
+}
+
+.badge {
+  padding: 3px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+@media (max-width: 899px) {
+  .btn {
+    height: 44px;
+  }
+}
+
+@media (hover: none) {
+  .kbd {
+    display: none;
+  }
+}

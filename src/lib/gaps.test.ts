@@ -10,7 +10,7 @@ import { make, sample } from '../test/fixtures';
 
 afterEach(() => {
   vi.restoreAllMocks();
-  delete document.documentElement.dataset.theme;
+  document.documentElement.removeAttribute('data-theme');
 });
 
 describe('storage', () => {
@@ -32,11 +32,33 @@ describe('storage', () => {
 });
 
 describe('appearance', () => {
+  const addMetas = (): HTMLMetaElement[] =>
+    (['light', 'dark'] as const).map((scheme) => {
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      meta.media = `(prefers-color-scheme: ${scheme})`;
+      meta.content = scheme === 'dark' ? '#0a0a0c' : '#ffffff';
+      document.head.append(meta);
+      return meta;
+    });
+
+  it('цвет панели браузера следует за выбранной темой и возвращается к системной', () => {
+    const [light, dark] = addMetas() as [HTMLMetaElement, HTMLMetaElement];
+    applyMode('dark');
+    expect([light.content, dark.content]).toEqual(['#0a0a0c', '#0a0a0c']);
+    applyMode('light');
+    expect([light.content, dark.content]).toEqual(['#ffffff', '#ffffff']);
+    applyMode('system');
+    expect([light.content, dark.content]).toEqual(['#ffffff', '#0a0a0c']);
+    light.remove();
+    dark.remove();
+  });
+
   it('«системная» тема убирает атрибут, явная ставит его', () => {
     applyMode('dark');
-    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
     applyMode('system');
-    expect(document.documentElement.dataset.theme).toBeUndefined();
+    expect(document.documentElement.getAttribute('data-theme')).toBeNull();
   });
 
   it('игнорирует мусор в сохранённой теме', () => {

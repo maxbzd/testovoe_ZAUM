@@ -1,0 +1,31 @@
+/* Каркас страницы */
+
+.app {
+  display: grid;
+  grid-template-columns: 248px minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+  max-width: 1480px;
+  margin-inline: auto;
+  padding: 22px 28px 72px;
+}
+
+@media (max-width: 899px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .main {
+    gap: 14px;
+    padding: 4px 16px calc(40px + env(safe-area-inset-bottom, 0px));
+    max-width: none;
+  }
+}

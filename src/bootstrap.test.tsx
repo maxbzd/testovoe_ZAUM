@@ -31,6 +31,7 @@ describe('mount', () => {
 
   it('справляется и с необычной ошибкой', async () => {
     vi.spyOn(load, 'parsePlacements').mockImplementation(() => {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error -- проверяем и такой случай
       throw 'строка вместо ошибки';
     });
     mount(container(), []);

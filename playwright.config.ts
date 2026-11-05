@@ -6,15 +6,15 @@ import { defineConfig, devices } from '@playwright/test';
  *
  * Локально можно указать уже установленный Chromium: CHROME_PATH=/путь/к/chrome npm run test:e2e
  */
-const executablePath = process.env.CHROME_PATH;
+const executablePath = process.env['CHROME_PATH'];
 const launchOptions = executablePath ? { executablePath } : {};
 
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
-  forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? 'github' : 'list',
+  forbidOnly: Boolean(process.env['CI']),
+  retries: process.env['CI'] ? 1 : 0,
+  reporter: process.env['CI'] ? 'github' : 'list',
   use: { baseURL: 'http://localhost:4173', trace: 'retain-on-failure' },
   projects: [
     {
@@ -41,7 +41,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run build && npm run preview -- --port 4173 --strictPort',
     url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: !process.env['CI'],
     timeout: 120_000,
   },
 });
