@@ -6,9 +6,9 @@
   --font: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   /* Поверхности */
-  --bg: light-dark(#ffffff, #0a0a0c);
+  --bg: light-dark(#fff, #0a0a0c);
   --bg-side: light-dark(#fafafb, #0e0e11);
-  --surface: light-dark(#ffffff, #111114);
+  --surface: light-dark(#fff, #111114);
   --surface-2: light-dark(#f4f4f6, #17171b);
   --surface-3: light-dark(#ececef, #202026);
 
@@ -20,7 +20,7 @@
   --text: light-dark(#0f0f12, #ededf0);
   --text-2: light-dark(#3c3c45, #c3c3cb);
   --muted: light-dark(#62626e, #8d8d99);
-  --on-ink: light-dark(#ffffff, #0a0a0c);
+  --on-ink: light-dark(#fff, #0a0a0c);
 
   /* Фокус */
   --focus: light-dark(#3e63dd, #7c9bff);
@@ -31,15 +31,12 @@
   --s1: light-dark(#2f6fde, #6ea2ff);
   --s2: light-dark(#7a4fe0, #a98bff);
   --s3: light-dark(#1e9e5a, #46c27f);
-
-  --scrim: light-dark(rgb(15 15 20 / 0.28), rgb(0 0 0 / 0.55));
+  --scrim: light-dark(rgb(15 15 20 / 28%), rgb(0 0 0 / 55%));
   --shadow-pop:
-    0 0 0 1px var(--line-strong), 0 12px 32px light-dark(rgb(16 16 24 / 0.12), rgb(0 0 0 / 0.55));
-
+    0 0 0 1px var(--line-strong), 0 12px 32px light-dark(rgb(16 16 24 / 12%), rgb(0 0 0 / 55%));
   --r-sm: 6px;
   --r-md: 8px;
   --r-lg: 12px;
-
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
 }
@@ -55,12 +52,15 @@
 [data-status='0'] {
   --dot: var(--s0);
 }
+
 [data-status='1'] {
   --dot: var(--s1);
 }
+
 [data-status='2'] {
   --dot: var(--s2);
 }
+
 [data-status='3'] {
   --dot: var(--s3);
 }

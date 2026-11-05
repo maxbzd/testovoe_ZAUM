@@ -1,0 +1,70 @@
+/* Список размещений (телефон) */
+
+.list {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  list-style: none;
+}
+
+.list__li + .list__li {
+  border-top: 1px solid var(--line);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  transition: background-color 0.12s;
+}
+
+.item:active,
+.item[data-active] {
+  background: var(--surface-2);
+}
+
+.item__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.item__name,
+.item__cost {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.item__cost {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.item__row--meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.item__row--foot {
+  align-items: center;
+  margin-top: 5px;
+  font-size: 13px;
+}
+
+.item__results {
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
