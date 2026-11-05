@@ -1,5 +1,8 @@
-import { useEffect, useRef, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
+import { useDialog } from '../hooks/useDialog';
+import { useSheetDrag } from '../hooks/useSheetDrag';
 import { cssVars } from '../lib/css';
+import { isTyping } from '../lib/dom';
 import { formatDateLong, formatInt, formatRub } from '../lib/format';
 import { cpmOf } from '../lib/metrics';
 import { safeExternalUrl } from '../lib/safe-url';
@@ -10,6 +13,8 @@ import { Icon } from './Icon';
 interface Props {
   item: Placement;
   closing: boolean;
+  /** Поверх открылась палитра или фильтры: карточка не слушает клавиатуру. */
+  suspended: boolean;
   /** Позиция в текущем отборе; null — карточка открыта не из списка. */
   position: { index: number; total: number } | null;
   onClose: () => void;
@@ -28,41 +33,19 @@ function Prop({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input, select, [tabindex]:not([tabindex="-1"])';
-
-export function Drawer({ item, closing, position, onClose, onStep, onCopy }: Props) {
-  const rootRef = useRef<HTMLElement>(null);
+export function Drawer({ item, closing, suspended, position, onClose, onStep, onCopy }: Props) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const drag = useRef<{ startY: number; dy: number } | null>(null);
+  useDialog(rootRef, { onClose, initialFocus: closeRef, suspended });
+  const drag = useSheetDrag(rootRef, onClose);
 
-  // Фокус: внутрь при открытии и обратно на кнопку-источник при закрытии.
+  // J/K и стрелки листают размещения; пока печатают или открыта палитра — молчим.
   useEffect(() => {
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    closeRef.current?.focus({ preventScroll: true });
-    return () => {
-      if (opener?.isConnected) opener.focus({ preventScroll: true });
-    };
-  }, []);
-
-  useEffect(() => {
+    if (suspended) return undefined;
     const onKey = (event: KeyboardEvent): void => {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
-      } else if (event.key === 'Tab') {
-        const nodes = rootRef.current?.querySelectorAll<HTMLElement>(FOCUSABLE);
-        if (!nodes || nodes.length === 0) return;
-        const first = nodes[0];
-        const last = nodes[nodes.length - 1];
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault();
-          first?.focus();
-        }
-      } else if (event.key === 'j' || event.key === 'ArrowDown') {
+      if (isTyping(event.target)) return;
+      if (event.key === 'j' || event.key === 'ArrowDown') {
         event.preventDefault();
         onStep(1);
       } else if (event.key === 'k' || event.key === 'ArrowUp') {
@@ -72,25 +55,7 @@ export function Drawer({ item, closing, position, onClose, onStep, onCopy }: Pro
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [onClose, onStep]);
-
-  // Телефон: шторку можно «смахнуть» вниз за ручку.
-  const onGripDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
-    drag.current = { startY: event.clientY, dy: 0 };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-  const onGripMove = (event: ReactPointerEvent<HTMLDivElement>): void => {
-    if (!drag.current) return;
-    drag.current.dy = Math.max(0, event.clientY - drag.current.startY);
-    rootRef.current?.style.setProperty('--drag', `${drag.current.dy}px`);
-  };
-  const onGripUp = (): void => {
-    if (!drag.current) return;
-    const { dy } = drag.current;
-    drag.current = null;
-    if (dy > 110) onClose();
-    else rootRef.current?.style.setProperty('--drag', '0px');
-  };
+  }, [onStep, suspended]);
 
   const link = safeExternalUrl(item.link);
   const current = statusIndex(item.status);
@@ -100,21 +65,14 @@ export function Drawer({ item, closing, position, onClose, onStep, onCopy }: Pro
   return (
     <div className="drawer-layer" data-closing={closing || undefined}>
       <div className="scrim" onClick={onClose} aria-hidden="true" />
-      <aside
+      <div
         ref={rootRef}
         className="drawer"
         role="dialog"
         aria-modal="true"
         aria-labelledby="drawer-title"
       >
-        <div
-          className="drawer__grip"
-          onPointerDown={onGripDown}
-          onPointerMove={onGripMove}
-          onPointerUp={onGripUp}
-          onPointerCancel={onGripUp}
-          aria-hidden="true"
-        >
+        <div className="drawer__grip" aria-hidden="true" {...drag}>
           <span />
         </div>
 
@@ -159,7 +117,13 @@ export function Drawer({ item, closing, position, onClose, onStep, onCopy }: Pro
           </div>
         </header>
 
-        <div className="drawer__body" key={item.id}>
+        <div
+          className="drawer__body"
+          key={item.id}
+          tabIndex={0}
+          role="region"
+          aria-labelledby="drawer-title"
+        >
           <h2 id="drawer-title" className="drawer__title">
             {item.name}
           </h2>
@@ -259,7 +223,7 @@ export function Drawer({ item, closing, position, onClose, onStep, onCopy }: Pro
             <Kbd>K</Kbd>
           </span>
         </footer>
-      </aside>
+      </div>
     </div>
   );
 }

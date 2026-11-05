@@ -1,5 +1,6 @@
 import { EMPTY_FILTERS } from './filter';
-import type { Filters, Platform, Sort, SortKey, Status } from '../types';
+import { DEFAULT_SORT, isDefaultSort, SORT_KEYS } from './sort';
+import type { Filters, Platform, Sort, Status } from '../types';
 import { PLATFORMS, STATUSES } from '../types';
 
 /** Всё, что человек выбрал на экране. Живёт в адресной строке — ссылкой можно поделиться. */
@@ -9,26 +10,12 @@ export interface AppState {
   openId: number | null;
 }
 
-export const DEFAULT_SORT: Sort = { key: 'date', dir: 'asc' };
-
 const STATUS_SLUGS: Record<Status, string> = {
   Согласование: 'approval',
   Запланировано: 'planned',
   Опубликовано: 'published',
   'Результаты получены': 'results',
 };
-const SORT_KEYS: readonly SortKey[] = [
-  'name',
-  'platform',
-  'status',
-  'date',
-  'subscribers',
-  'storyReach',
-  'reelsViews',
-  'cost',
-  'cpm',
-];
-
 export const initialState = (): AppState => ({
   filters: EMPTY_FILTERS,
   sort: DEFAULT_SORT,
@@ -68,7 +55,7 @@ export function serializeState(state: AppState): string {
   if (state.filters.platforms.length > 0) {
     params.set('platform', state.filters.platforms.map((p) => p.toLowerCase()).join(','));
   }
-  if (state.sort.key !== DEFAULT_SORT.key || state.sort.dir !== DEFAULT_SORT.dir) {
+  if (!isDefaultSort(state.sort)) {
     params.set('sort', `${state.sort.dir === 'desc' ? '-' : ''}${state.sort.key}`);
   }
   if (state.openId !== null) params.set('open', String(state.openId));

@@ -49,6 +49,12 @@ const PATHS = {
   ),
   check: <path d="M20 6 9 17l-5-5" />,
   filter: <path d="M3 5h18l-7 8v6l-4-2v-4z" />,
+  sliders: (
+    <>
+      <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3" />
+      <path d="M1 14h6M9 8h6M17 16h6" />
+    </>
+  ),
   command: <path d="M15 6a3 3 0 1 1 3 3H6a3 3 0 1 1 3-3v12a3 3 0 1 1-3-3h12a3 3 0 1 1-3 3z" />,
   sun: (
     <>

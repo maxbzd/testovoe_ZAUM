@@ -1,17 +1,11 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useDialog } from '../hooks/useDialog';
+import { usePresence } from '../hooks/usePresence';
 import { normalize, searchText } from '../lib/filter';
 import type { Placement } from '../types';
 import { Kbd, StatusBadge } from './Badges';
-import { Icon, type IconName } from './Icon';
-
-export interface PaletteAction {
-  id: string;
-  label: string;
-  hint?: string;
-  keywords?: string;
-  icon: IconName;
-  run: () => void;
-}
+import type { PaletteAction } from '../lib/palette-actions';
+import { Icon } from './Icon';
 
 interface Props {
   placements: readonly Placement[];
@@ -25,9 +19,21 @@ type Entry =
   | { kind: 'placement'; key: string; item: Placement };
 
 const MAX_RESULTS = 10;
+export const PALETTE_EXIT_MS = 160;
 
 /** ⌘K: быстро прыгнуть к блогеру или выполнить действие, не трогая мышь. */
-export function CommandPalette({ placements, actions, onOpenPlacement, onClose }: Props) {
+export function CommandPalette({ open, ...rest }: Props & { open: boolean }) {
+  const { mounted, closing } = usePresence(open, PALETTE_EXIT_MS);
+  return mounted ? <PaletteBody closing={closing} {...rest} /> : null;
+}
+
+function PaletteBody({
+  placements,
+  actions,
+  onOpenPlacement,
+  onClose,
+  closing,
+}: Props & { closing: boolean }) {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const listRef = useRef<HTMLUListElement>(null);
@@ -48,9 +54,8 @@ export function CommandPalette({ placements, actions, onOpenPlacement, onClose }
     return ordered.slice(0, MAX_RESULTS);
   }, [query, actions, placements]);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useDialog(rootRef, { onClose, initialFocus: inputRef });
 
   useEffect(() => {
     listRef.current
@@ -66,10 +71,7 @@ export function CommandPalette({ placements, actions, onOpenPlacement, onClose }
   };
 
   const onKeyDown = (event: React.KeyboardEvent): void => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onClose();
-    } else if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown') {
       event.preventDefault();
       setActive((index) => (entries.length ? (index + 1) % entries.length : 0));
     } else if (event.key === 'ArrowUp') {
@@ -78,15 +80,14 @@ export function CommandPalette({ placements, actions, onOpenPlacement, onClose }
     } else if (event.key === 'Enter') {
       event.preventDefault();
       run(entries[active]);
-    } else if (event.key === 'Tab') {
-      event.preventDefault();
     }
   };
 
   return (
-    <div className="palette-layer">
+    <div className="palette-layer" data-closing={closing || undefined}>
       <div className="scrim" onClick={onClose} aria-hidden="true" />
       <div
+        ref={rootRef}
         className="palette"
         role="dialog"
         aria-modal="true"
