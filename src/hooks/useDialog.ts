@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, type RefObject } from 'react';
 import { FOCUSABLE } from '../lib/dom';
 
 interface Options {
@@ -16,7 +16,8 @@ interface Options {
 export function useDialog(root: RefObject<HTMLElement | null>, options: Options): void {
   const { onClose, initialFocus, suspended = false } = options;
 
-  useEffect(() => {
+  // Синхронный эффект: фокус возвращается в том же кадре, что и закрытие, без «провала» на body.
+  useLayoutEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const first = root.current?.querySelector<HTMLElement>(FOCUSABLE);
     (initialFocus?.current ?? first)?.focus({ preventScroll: true });

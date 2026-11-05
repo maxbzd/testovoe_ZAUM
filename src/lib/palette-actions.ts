@@ -18,7 +18,7 @@ interface Params {
   filtersActive: boolean;
   selectStatus: (status: Status | null) => void;
   togglePlatform: (platform: Platform) => void;
-  resetFilters: () => void;
+  resetFilters: (animate?: boolean) => void;
   exportCsv: () => void;
   setMode: (mode: Mode) => void;
 }
@@ -77,7 +77,7 @@ export function buildPaletteActions(p: Params): PaletteAction[] {
       label: 'Сбросить фильтры',
       icon: 'x',
       keywords: 'очистить убрать',
-      run: p.resetFilters,
+      run: () => p.resetFilters(),
     });
   }
   return actions;

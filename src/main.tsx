@@ -2,6 +2,7 @@ import '@fontsource-variable/inter/wght.css';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import raw from './data/bloggers.json';
 import { parsePlacements } from './data/load';
 import './styles/index.css';
@@ -22,7 +23,9 @@ try {
 if (placements) {
   root.render(
     <StrictMode>
-      <App placements={placements} />
+      <ErrorBoundary>
+        <App placements={placements} />
+      </ErrorBoundary>
     </StrictMode>,
   );
 } else {
