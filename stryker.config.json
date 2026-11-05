@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+  "testRunner": "vitest",
+  "checkers": ["typescript"],
+  "tsconfigFile": "tsconfig.json",
+  "coverageAnalysis": "perTest",
+  "mutate": [
+    "src/lib/**/*.ts",
+    "src/hooks/**/*.ts",
+    "src/data/load.ts",
+    "scripts/build-data.lib.mjs",
+    "scripts/check-size.lib.mjs",
+    "scripts/check-licenses.lib.mjs",
+    "scripts/sbom.lib.mjs",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!src/lib/palette-actions.ts"
+  ],
+  "reporters": ["clear-text", "progress", "html"],
+  "htmlReporter": {
+    "fileName": "reports/mutation/index.html"
+  },
+  "ignorePatterns": ["dist", "dist-single", "coverage", "reports", "test-results", "node_modules"],
+  "thresholds": {
+    "high": 98,
+    "low": 95,
+    "break": 95
+  },
+  "timeoutMS": 20000,
+  "mutator": {
+    "excludedMutations": ["ArrayDeclaration"]
+  }
+}

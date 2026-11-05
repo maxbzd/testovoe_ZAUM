@@ -9,6 +9,7 @@ export function useToast(): [ToastMessage | null, (text: string) => void] {
   const counter = useRef(0);
 
   const show = useCallback((text: string) => {
+    // Stryker disable next-line AssignmentOperator: нужна лишь уникальность номера, направление счёта не важно
     counter.current += 1;
     setMessage({ id: counter.current, text });
   }, []);

@@ -45,8 +45,9 @@ export function useAppController(placements: readonly Placement[]) {
   const derived = useDerivedData(placements, state);
   const { rows, statusCounts } = derived;
 
+  // Номер из адреса, которого нет в данных, просто не открывает карточку.
   const current = useMemo(
-    () => (state.openId === null ? null : (placements.find((p) => p.id === state.openId) ?? null)),
+    () => placements.find((p) => p.id === state.openId) ?? null,
     [placements, state.openId],
   );
   const drawerItem = current ?? exiting;
