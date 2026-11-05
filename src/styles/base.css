@@ -101,6 +101,11 @@ a {
   margin-bottom: 8px;
 }
 
+.fatal p {
+  margin-bottom: 16px;
+  color: var(--muted);
+}
+
 /* View Transitions: строки «переезжают», а не прыгают */
 ::view-transition-group(*) {
   animation-duration: 0.28s;

@@ -82,6 +82,7 @@ export function StatsBar({ metrics, rows, scale, statusCounts, filtered, scrolla
         </span>
         <span
           className="range"
+          data-empty={metrics.count === 0 || undefined}
           role="img"
           aria-label={`Диапазон CPM по всем данным: ${formatInt(scale.cpmMin)}–${formatInt(scale.cpmMax)} ₽`}
           title={`Диапазон по всем данным: ${formatInt(scale.cpmMin)}–${formatInt(scale.cpmMax)} ₽`}

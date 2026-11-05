@@ -77,3 +77,22 @@ export function sortItems(items: readonly Placement[], sort: Sort): Placement[] 
     return order !== 0 ? order * direction : a.id - b.id;
   });
 }
+
+const tokens = (text: string): string[] =>
+  normalize(text)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+
+/**
+ * Насколько запрос подходит блогеру: начало слова в имени весит больше, чем начало
+ * в артикуле, а оно — больше, чем случайное совпадение внутри. Для сортировки подсказок.
+ */
+export function relevance(item: Placement, words: readonly string[]): number {
+  const name = tokens(item.name);
+  const article = tokens(item.article);
+  return words.reduce((total, word) => {
+    if (name.some((token) => token.startsWith(word))) return total + 3;
+    if (article.some((token) => token.startsWith(word))) return total + 2;
+    return total + 1;
+  }, 0);
+}

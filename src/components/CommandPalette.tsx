@@ -1,7 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useDialog } from '../hooks/useDialog';
 import { usePresence } from '../hooks/usePresence';
-import { normalize, searchText } from '../lib/filter';
+import { normalize, relevance, searchText } from '../lib/filter';
 import type { Placement } from '../types';
 import { Kbd, StatusBadge } from './Badges';
 import type { PaletteAction } from '../lib/palette-actions';
@@ -48,6 +48,7 @@ function PaletteBody({
       .map((action) => ({ kind: 'action', key: `a:${action.id}`, action }));
     const placementEntries: Entry[] = placements
       .filter((item) => words.length > 0 && matches(searchText(item)))
+      .sort((a, b) => relevance(b, words) - relevance(a, words) || a.id - b.id)
       .map((item) => ({ kind: 'placement', key: `p:${item.id}`, item }));
     // Пустой запрос: сначала действия. Есть запрос: сначала найденные блогеры.
     const ordered = words.length > 0 ? [...placementEntries, ...actionEntries] : actionEntries;

@@ -405,6 +405,10 @@
   background: var(--line-strong);
 }
 
+.range[data-empty] > span {
+  opacity: 0;
+}
+
 .range > span {
   position: absolute;
   top: 50%;
