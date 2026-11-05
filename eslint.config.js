@@ -55,7 +55,13 @@ export default tseslint.config(
 
   // Тесты: правила по типам, но без придирок, мешающих выразительным проверкам.
   {
-    files: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'e2e/**/*.ts', 'scripts/**/*.test.ts'],
+    files: [
+      'src/**/*.test.{ts,tsx}',
+      'src/test/**',
+      'e2e/**/*.ts',
+      'e2e-visual/**/*.ts',
+      'scripts/**/*.test.ts',
+    ],
     extends: [...tseslint.configs.recommendedTypeChecked],
     ...typed,
     languageOptions: { ...typed.languageOptions, globals: globals.browser },
@@ -71,7 +77,12 @@ export default tseslint.config(
   },
 
   {
-    files: ['scripts/**/*.mjs', 'eslint.config.js', 'playwright.config.ts'],
+    files: [
+      'scripts/**/*.mjs',
+      'eslint.config.js',
+      'playwright.config.ts',
+      'playwright.visual.config.ts',
+    ],
     languageOptions: { globals: globals.node },
   },
   {

@@ -39,7 +39,6 @@ export function useDialog(root: RefObject<HTMLElement | null>, options: Options)
       if (event.key !== 'Tab') return;
       // Слушатель снимается при размонтировании, поэтому корень здесь всегда есть.
       const nodes = (root.current as HTMLElement).querySelectorAll<HTMLElement>(FOCUSABLE);
-      if (nodes.length === 0) return;
       const first = nodes[0];
       const last = nodes[nodes.length - 1];
       if (event.shiftKey && document.activeElement === first) {

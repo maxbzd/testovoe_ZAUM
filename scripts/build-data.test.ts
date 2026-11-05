@@ -85,6 +85,65 @@ describe('buildPlacements', () => {
   });
 });
 
+describe('buildPlacements: детали разбора', () => {
+  const second = ROW.replace('1,DEMO-1,Блогер 001', '2,DEMO-2,Блогер 002');
+
+  it('BOM снимается только в начале файла', () => {
+    expect(parseCsv('\uFEFFa,b')).toEqual([['a', 'b']]);
+    expect(parseCsv('a,b\n\uFEFFc')).toEqual([['a', 'b'], ['\uFEFFc']]);
+  });
+
+  it('понимает любые переводы строк и не плодит пустые строки', () => {
+    expect(parseCsv('a\r\nb\rc\nd')).toEqual([['a'], ['b'], ['c'], ['d']]);
+    expect(parseCsv('a,b\n,\n')).toEqual([['a', 'b']]);
+  });
+
+  it('обрезает пробелы вокруг значений и понимает числа с пробелами', () => {
+    const padded = ROW.replace('Блогер 001', '  Блогер 001  ').replace(',1000,', ', 1 000 ,');
+    expect(buildPlacements(csv(padded))[0]).toMatchObject({
+      name: 'Блогер 001',
+      subscribers: 1000,
+    });
+    const noComment = csv(ROW.replace(',"Заметка, с запятой"', ',   '));
+    expect(buildPlacements(noComment)[0]).toMatchObject({ comment: '' });
+  });
+
+  it('ноль допустим в числовых полях', () => {
+    expect(buildPlacements(broken(',500,', ',0,'))[0]).toMatchObject({ cost: 0 });
+  });
+
+  it('в сообщении об ошибке номер строки считается по файлу (заголовок — первая)', () => {
+    expect(() => buildPlacements(csv(ROW, second.replace('Согласование', 'Отменено')))).toThrow(
+      'строка 3',
+    );
+    expect(() => buildPlacements(csv(broken('Telegram', 'TikTok')))).toThrow('строка 2');
+  });
+
+  it('дата только «ГГГГ-ММ-ДД»: время и посторонний префикс отвергаются, хотя Date.parse их понимает', () => {
+    expect(() => buildPlacements(broken('2026-11-02', '2026-11-02T10:00:00'))).toThrow(
+      'ГГГГ-ММ-ДД',
+    );
+    expect(() => buildPlacements(broken('2026-11-02', '1 2026-11-02'))).toThrow('ГГГГ-ММ-ДД');
+  });
+
+  it('дата и ссылка проверяются целиком: ни префикс, ни суффикс не проходят', () => {
+    expect(() => buildPlacements(broken('2026-11-02', '2026-11-02x'))).toThrow('ГГГГ-ММ-ДД');
+    expect(() => buildPlacements(broken('2026-11-02', 'x2026-11-02'))).toThrow('ГГГГ-ММ-ДД');
+    expect(() => buildPlacements(broken('https://example.com/1', 'xhttps://example.com'))).toThrow(
+      'http(s)',
+    );
+    expect(() => buildPlacements(broken('https://example.com/1', 'ftp://example.com'))).toThrow(
+      'http(s)',
+    );
+    expect(buildPlacements(broken('https://example.com/1', 'http://example.com'))[0]).toMatchObject(
+      {
+        link: 'http://example.com',
+      },
+    );
+    expect(buildPlacements(broken('https://example.com/1', 'HTTPS://EXAMPLE.COM'))).toHaveLength(1);
+  });
+});
+
 describe('данные в репозитории', () => {
   it('bloggers.json в точности соответствует data/bloggers.csv (запустите npm run data)', () => {
     const fromCsv = buildPlacements(readFileSync('data/bloggers.csv', 'utf8'));
