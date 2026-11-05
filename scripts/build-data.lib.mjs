@@ -39,13 +39,13 @@ export function parseCsv(text) {
       row.push(field);
       field = '';
     } else if (ch === '\n' || ch === '\r') {
-      if (ch === '\r' && src[i + 1] === '\n') i += 1;
+      // «\r\n» даёт два конца строки подряд: пустую строку endRow() отбрасывает.
       endRow();
     } else {
       field += ch;
     }
   }
-  if (field !== '' || row.length > 0) endRow();
+  endRow(); // последняя строка без перевода в конце; пустая отбрасывается
   return rows;
 }
 
@@ -107,6 +107,7 @@ export function buildPlacements(csvText) {
     };
 
     const date = text('date');
+    // Stryker disable next-line Regex: Date.parse сам отвергает посторонний префикс, `^` — для ясности
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(date))) {
       fail(line, `«${COLUMNS.date}»: ожидался формат ГГГГ-ММ-ДД, получено «${date}»`);
     }

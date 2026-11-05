@@ -9,6 +9,7 @@ export async function copyText(text: string): Promise<boolean> {
   try {
     const area = document.createElement('textarea');
     area.value = text;
+    // Stryker disable next-line StringLiteral: булев атрибут, значение не читается
     area.setAttribute('readonly', '');
     area.className = 'sr-only';
     document.body.append(area);

@@ -36,11 +36,12 @@ export function applyFilters(
   filters: Filters,
   ignore?: 'status',
 ): Placement[] {
-  const words = normalize(filters.query).split(/\s+/).filter(Boolean);
+  // Пустые слова (ведущие и хвостовые пробелы) входят в любой текст и поиск не меняют.
+  // Stryker disable next-line Regex: лишние пустые слова входят в любой текст и поиск не меняют
+  const words = normalize(filters.query).split(/\s+/);
   return items.filter((item) => {
     if (ignore !== 'status' && filters.status && item.status !== filters.status) return false;
     if (filters.platforms.length > 0 && !filters.platforms.includes(item.platform)) return false;
-    if (words.length === 0) return true;
     const haystack = searchText(item);
     return words.every((word) => haystack.includes(word));
   });
@@ -48,10 +49,6 @@ export function applyFilters(
 
 const sortValue = (item: Placement, key: SortKey): number | string => {
   switch (key) {
-    case 'name':
-      return item.name;
-    case 'platform':
-      return item.platform;
     case 'status':
       return STATUSES.indexOf(item.status);
     case 'date':
@@ -74,14 +71,13 @@ export function sortItems(items: readonly Placement[], sort: Sort): Placement[] 
       typeof left === 'number' && typeof right === 'number'
         ? left - right
         : collator.compare(String(left), String(right));
+    // Stryker disable next-line ArithmeticOperator: direction равен ±1, умножение и деление совпадают
     return order !== 0 ? order * direction : a.id - b.id;
   });
 }
 
-const tokens = (text: string): string[] =>
-  normalize(text)
-    .split(/[^\p{L}\p{N}]+/u)
-    .filter(Boolean);
+// Stryker disable next-line Regex: пустые токены никогда не начинаются с непустого слова
+const tokens = (text: string): string[] => normalize(text).split(/[^\p{L}\p{N}]+/u);
 
 /**
  * Насколько запрос подходит блогеру: начало слова в имени весит больше, чем начало

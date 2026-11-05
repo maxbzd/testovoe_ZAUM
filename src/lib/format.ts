@@ -1,4 +1,4 @@
-const intFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 });
+const intFormat = new Intl.NumberFormat('ru-RU');
 
 const MONTHS_SHORT = [
   'янв',
@@ -62,12 +62,9 @@ export function parseIsoDate(iso: string): DateParts | null {
   if (!match) return null;
   const [, y, m, d] = match;
   const parts = { year: Number(y), month: Number(m), day: Number(d) };
+  // Несуществующая дата (30 февраля, 13-й месяц, нулевой день) «переезжает» в другой месяц.
   const probe = new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
-  const valid =
-    probe.getUTCFullYear() === parts.year &&
-    probe.getUTCMonth() === parts.month - 1 &&
-    probe.getUTCDate() === parts.day;
-  return valid ? parts : null;
+  return probe.getUTCMonth() === parts.month - 1 ? parts : null;
 }
 
 /** «2026-11-02» → «2 ноя». */
@@ -91,7 +88,8 @@ export function formatDateLong(iso: string): string {
 export function plural(n: number, forms: readonly [string, string, string]): string {
   const abs = Math.abs(n) % 100;
   const last = abs % 10;
-  if (abs > 10 && abs < 20) return forms[2];
+  // Stryker disable next-line EqualityOperator: границы 10 и 15 дают тот же результат по последней цифре
+  if (abs > 10 && abs < 15) return forms[2];
   if (last > 1 && last < 5) return forms[1];
   if (last === 1) return forms[0];
   return forms[2];

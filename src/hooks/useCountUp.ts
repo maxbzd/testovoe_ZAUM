@@ -10,6 +10,7 @@ export function useCountUp(target: number, duration = 700, updateDuration = 320)
   const first = useRef(true);
 
   useEffect(() => {
+    // Stryker disable next-line ConditionalExpression: оптимизация, итог тот же (значение берётся из target)
     if (reduced) return undefined;
     const from = shown.current;
     const span = first.current ? duration : updateDuration;

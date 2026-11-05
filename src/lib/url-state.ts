@@ -27,11 +27,13 @@ export function parseState(search: string): AppState {
   const state = initialState();
 
   const status = STATUSES.find((s) => STATUS_SLUGS[s] === params.get('status'));
+  // Stryker disable next-line StringLiteral: любая «заглушка» при отсутствии параметра отфильтровывается ниже
   const platforms = (params.get('platform') ?? '')
     .split(',')
     .map((slug) => PLATFORMS.find((p) => p.toLowerCase() === slug))
     .filter((p): p is Platform => p !== undefined);
 
+  // Stryker disable next-line StringLiteral: при отсутствии параметра ключ не находится в любом случае
   const rawSort = params.get('sort') ?? '';
   const key = SORT_KEYS.find((k) => k === rawSort.replace(/^-/, ''));
   const openId = Number(params.get('open'));

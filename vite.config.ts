@@ -65,7 +65,13 @@ export default defineConfig({
     include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      include: ['src/**/*.{ts,tsx}', 'scripts/build-data.lib.mjs'],
+      include: [
+        'src/**/*.{ts,tsx}',
+        'scripts/build-data.lib.mjs',
+        'scripts/check-size.lib.mjs',
+        'scripts/check-licenses.lib.mjs',
+        'scripts/sbom.lib.mjs',
+      ],
       exclude: [
         'src/**/*.test.{ts,tsx}',
         'src/test/**',
