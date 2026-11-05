@@ -13,7 +13,8 @@ for (const scheme of ['light', 'dark'] as const) {
     test('нет нарушений доступности и горизонтальной прокрутки', async ({ page }) => {
       await page.goto('/');
       await expect(page.getByRole('heading', { name: 'Размещения', level: 1 })).toBeVisible();
-      await page.waitForTimeout(1600); // дождаться окончания вступительных анимаций
+      // Ждём конца вступительных анимаций: axe не должен мерить полупрозрачные элементы.
+      await expect(page.locator('.app')).not.toHaveClass(/is-intro/);
 
       const scan = () =>
         new AxeBuilder({ page })
@@ -45,7 +46,7 @@ for (const scheme of ['light', 'dark'] as const) {
 
 for (const width of [320, 360, 390, 768, 899, 900, 1024, 1280, 1920]) {
   test(`ширина ${width}px: страница не прокручивается вбок`, async ({ page }) => {
-    test.skip(test.info().project.name === 'phone', 'размер задаётся явно');
+    test.skip(['phone', 'iphone'].includes(test.info().project.name), 'размер задаётся явно');
     await page.setViewportSize({ width, height: 900 });
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Размещения', level: 1 })).toBeVisible();

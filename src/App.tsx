@@ -74,8 +74,13 @@ export default function App({ placements }: Props) {
   const overlayOpen = paletteOpen || sheetOpen || drawerItem !== null;
 
   // ——— действия ———
+  // `animate: false` — для шторки фильтров: список под ней закрыт, анимация не видна,
+  // а переключатели должны отзываться мгновенно.
   const commit = useCallback(
-    (next: (previous: AppState) => AppState) => withTransition(() => setState(next)),
+    (next: (previous: AppState) => AppState, animate = true) => {
+      if (animate) withTransition(() => setState(next));
+      else setState(next);
+    },
     [setState],
   );
 
@@ -84,14 +89,14 @@ export default function App({ placements }: Props) {
     [commit],
   );
   const togglePlatform = useCallback(
-    (platform: Platform) =>
+    (platform: Platform, animate = true) =>
       commit((s) => {
         const has = s.filters.platforms.includes(platform);
         const platforms = has
           ? s.filters.platforms.filter((p) => p !== platform)
           : [...s.filters.platforms, platform];
         return { ...s, filters: { ...s.filters, platforms } };
-      }),
+      }, animate),
     [commit],
   );
   const clearPlatforms = useCallback(
@@ -103,10 +108,13 @@ export default function App({ placements }: Props) {
     [setState],
   );
   const resetFilters = useCallback(
-    () => commit((s) => ({ ...s, filters: EMPTY_FILTERS })),
+    (animate = true) => commit((s) => ({ ...s, filters: EMPTY_FILTERS }), animate),
     [commit],
   );
-  const setSort = useCallback((sort: Sort) => commit((s) => ({ ...s, sort })), [commit]);
+  const setSort = useCallback(
+    (sort: Sort, animate = true) => commit((s) => ({ ...s, sort }), animate),
+    [commit],
+  );
   const sortBy = useCallback(
     (key: SortKey) =>
       commit((s) => ({
@@ -219,7 +227,7 @@ export default function App({ placements }: Props) {
 
   const results =
     rows.length === 0 ? (
-      <EmptyState onReset={resetFilters} />
+      <EmptyState onReset={() => resetFilters()} />
     ) : compact ? (
       <PlacementList rows={rows} activeId={state.openId} onOpen={openPlacement} />
     ) : (
@@ -317,7 +325,7 @@ export default function App({ placements }: Props) {
                   {state.sort.dir === 'asc' ? '↑' : '↓'}
                 </span>
                 {filtersActive && (
-                  <button type="button" className="link-btn" onClick={resetFilters}>
+                  <button type="button" className="link-btn" onClick={() => resetFilters()}>
                     Сбросить
                   </button>
                 )}
@@ -335,7 +343,7 @@ export default function App({ placements }: Props) {
               shown={rows.length}
               total={placements.length}
               hasFilters={filtersActive}
-              onReset={resetFilters}
+              onReset={() => resetFilters()}
             />
           )}
 
@@ -359,12 +367,12 @@ export default function App({ placements }: Props) {
         open={sheetOpen}
         platforms={state.filters.platforms}
         platformCounts={platformCounts}
-        onTogglePlatform={togglePlatform}
+        onTogglePlatform={(platform) => togglePlatform(platform, false)}
         sort={state.sort}
-        onSort={setSort}
+        onSort={(sort) => setSort(sort, false)}
         shown={rows.length}
         hasFilters={filtersActive}
-        onReset={resetFilters}
+        onReset={() => resetFilters(false)}
         onClose={() => setFiltersOpen(false)}
       />
 

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { sample } from '../test/fixtures';
-import { applyFilters, EMPTY_FILTERS, hasActiveFilters, normalize, sortItems } from './filter';
+import {
+  applyFilters,
+  EMPTY_FILTERS,
+  hasActiveFilters,
+  normalize,
+  relevance,
+  sortItems,
+} from './filter';
+import { make } from '../test/fixtures';
 
 const ids = (items: { id: number }[]): number[] => items.map((item) => item.id);
 
@@ -61,5 +69,12 @@ describe('filter', () => {
     const copy = [...sample];
     sortItems(sample, { key: 'cost', dir: 'desc' });
     expect(sample).toEqual(copy);
+  });
+
+  it('ранжирует подсказки: начало слова в имени сильнее случайного совпадения', () => {
+    const exact = make({ id: 20, name: 'Блогер 020', article: 'DEMO-121' });
+    const incidental = make({ id: 1, name: 'Блогер 001', article: 'DEMO-102' });
+    const words = ['блогер', '02'];
+    expect(relevance(exact, words)).toBeGreaterThan(relevance(incidental, words));
   });
 });
