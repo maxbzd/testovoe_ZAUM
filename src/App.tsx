@@ -13,6 +13,7 @@ import { StatsBar } from './components/StatsBar';
 import { StatusChips } from './components/StatusChips';
 import { ThemeButton } from './components/ThemeButton';
 import { Toast } from './components/Toast';
+import { config } from './config';
 import { Toolbar } from './components/Toolbar';
 import { Topbar } from './components/Topbar';
 import { useMode } from './hooks/useAppearance';
@@ -142,9 +143,10 @@ export default function App({ placements }: Props) {
   }, [current, setState]);
   const step = useCallback(
     (delta: 1 | -1) => {
-      if (!position || rows.length === 0) return;
-      const next = rows[(position.index + delta + rows.length) % rows.length];
-      if (next) setState((s) => ({ ...s, openId: next.id }));
+      // Есть позиция в отборе — значит, отбор не пуст и индекс по кругу всегда существует.
+      if (!position) return;
+      const next = rows[(position.index + delta + rows.length) % rows.length] as Placement;
+      setState((s) => ({ ...s, openId: next.id }));
     },
     [position, rows, setState],
   );
@@ -159,7 +161,7 @@ export default function App({ placements }: Props) {
   );
 
   const exportCsv = useCallback(() => {
-    if (__PREVIEW__) {
+    if (config.preview) {
       // В песочнице превью скачивание файлов заблокировано платформой.
       showToast('В превью скачивание отключено, на сайте файл сохранится');
       return;

@@ -94,4 +94,35 @@ describe('App на телефоне', () => {
     await user.click(screen.getByRole('button', { name: /Блогер 003/ }));
     expect(screen.getByRole('dialog', { name: 'Блогер 003' })).toBeInTheDocument();
   });
+
+  it('палитра открывается кнопкой в шапке, а «Сбросить» в сводке снимает отбор', async () => {
+    const user = userEvent.setup();
+    render(<App placements={sample} />);
+    await user.click(screen.getByRole('button', { name: 'Поиск и команды' }));
+    expect(screen.getByRole('dialog', { name: 'Поиск и команды' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    await user.type(screen.getByRole('textbox'), 'блогер 001');
+    expect(itemNames()).toEqual(['Блогер 001']);
+    await user.click(screen.getByRole('button', { name: 'Сбросить' }));
+    expect(itemNames()).toHaveLength(4);
+  });
+
+  it('если ничего не найдено, шторка так и пишет; выбор того же поля сохраняет порядок', async () => {
+    const user = userEvent.setup();
+    render(<App placements={sample} />);
+    await user.type(screen.getByRole('textbox'), 'яяяя');
+    await user.click(screen.getByRole('button', { name: /Фильтры и сортировка/ }));
+    const sheet = screen.getByRole('dialog');
+    expect(within(sheet).getByRole('button', { name: 'Ничего не найдено' })).toBeInTheDocument();
+
+    await user.click(within(sheet).getByRole('radio', { name: 'Стоимость' }));
+    await user.click(within(sheet).getByRole('radio', { name: 'По возрастанию' }));
+    await user.click(within(sheet).getByRole('radio', { name: 'Стоимость' })); // то же поле
+    expect(within(sheet).getByRole('radio', { name: 'По возрастанию' })).toHaveAttribute(
+      'aria-checked',
+      'true',
+    );
+  });
 });

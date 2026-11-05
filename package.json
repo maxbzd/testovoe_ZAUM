@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "data": "node scripts/build-data.mjs",
     "test:e2e": "playwright test",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm run coverage && npm run build",
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
