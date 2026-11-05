@@ -41,6 +41,7 @@ function htmlVariants(): Plugin {
 
 export default defineConfig({
   base: './',
+  define: { __PREVIEW__: JSON.stringify(single) },
   plugins: [react(), htmlVariants(), single ? viteSingleFile() : null],
   build: {
     target: 'es2022',

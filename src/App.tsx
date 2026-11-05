@@ -211,6 +211,11 @@ export default function App({ placements }: Props) {
   );
 
   const exportCsv = useCallback(() => {
+    if (__PREVIEW__) {
+      // В песочнице превью скачивание файлов заблокировано платформой.
+      showToast('В превью скачивание отключено, на сайте файл сохранится');
+      return;
+    }
     const ok = downloadCsv(rows, 'bloggers.csv');
     showToast(
       ok
